@@ -99,20 +99,10 @@ func parseECDSAPrivateKeyFromPEM(pemBytes []byte) (*ecdsa.PrivateKey, error) {
 	}
 
 	switch block.Type {
-	case "EC PRIVATE KEY":
-		key, err := x509.ParseECPrivateKey(block.Bytes)
-		if err != nil {
-			return nil, fmt.Errorf("parse EC private key: %w", err)
-		}
-		if key.Curve.Params().Name != elliptic.P256().Params().Name {
-			return nil, fmt.Errorf("unexpected elliptic curve: %s", key.Curve.Params().Name)
-		}
-		return key, nil
-
-	case "PRIVATE KEY":
+	case "EC PRIVATE KEY", "PRIVATE KEY": // TODO(zchee): Why can't use [x509.ParseECPrivateKey] even if ABM PEM is "EC PRIVATE KEY"?
 		parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
-			return nil, fmt.Errorf("parse PKCS8 private key: %w", err)
+			return nil, fmt.Errorf("parse %q private key: %w", block.Bytes, err)
 		}
 
 		key, ok := parsed.(*ecdsa.PrivateKey)

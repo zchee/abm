@@ -51,18 +51,14 @@ func TestParseECDSAPrivateKeyFromPEM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generate P-256 key: %v", err)
 	}
-	p256SEC1, err := x509.MarshalECPrivateKey(p256Key)
-	if err != nil {
-		t.Fatalf("marshal P-256 EC key: %v", err)
-	}
-	p256SEC1PEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: p256SEC1,
-	})
 	p256PKCS8, err := x509.MarshalPKCS8PrivateKey(p256Key)
 	if err != nil {
 		t.Fatalf("marshal P-256 PKCS8 key: %v", err)
 	}
+	p256ECPrivateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: p256PKCS8,
+	})
 	p256PKCS8PEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PRIVATE KEY",
 		Bytes: p256PKCS8,
@@ -72,13 +68,13 @@ func TestParseECDSAPrivateKeyFromPEM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generate P-384 key: %v", err)
 	}
-	p384SEC1, err := x509.MarshalECPrivateKey(p384Key)
+	p384PKCS8, err := x509.MarshalPKCS8PrivateKey(p384Key)
 	if err != nil {
-		t.Fatalf("marshal P-384 EC key: %v", err)
+		t.Fatalf("marshal P-384 PKCS8 key: %v", err)
 	}
-	p384SEC1PEM := pem.EncodeToMemory(&pem.Block{
+	p384ECPrivateKeyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "EC PRIVATE KEY",
-		Bytes: p384SEC1,
+		Bytes: p384PKCS8,
 	})
 
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -98,14 +94,14 @@ func TestParseECDSAPrivateKeyFromPEM(t *testing.T) {
 		pemBytes []byte
 		wantErr  bool
 	}{
-		"success: sec1 EC key": {
-			pemBytes: p256SEC1PEM,
+		"success: ec private key label with pkcs8 bytes": {
+			pemBytes: p256ECPrivateKeyPEM,
 		},
 		"success: pkcs8 EC key": {
 			pemBytes: p256PKCS8PEM,
 		},
 		"error: wrong curve": {
-			pemBytes: p384SEC1PEM,
+			pemBytes: p384ECPrivateKeyPEM,
 			wantErr:  true,
 		},
 		"error: non-EC key": {
@@ -156,13 +152,13 @@ func TestNewAssertion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generate P-256 key: %v", err)
 	}
-	p256SEC1, err := x509.MarshalECPrivateKey(p256Key)
+	p256PKCS8, err := x509.MarshalPKCS8PrivateKey(p256Key)
 	if err != nil {
-		t.Fatalf("marshal P-256 EC key: %v", err)
+		t.Fatalf("marshal P-256 PKCS8 key: %v", err)
 	}
 	p256PEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: p256SEC1,
+		Type:  "PRIVATE KEY",
+		Bytes: p256PKCS8,
 	})
 
 	privateKeyPath := filepath.Join(t.TempDir(), "private-key.pem")
@@ -247,13 +243,13 @@ func TestNewAssertionErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generate P-384 key: %v", err)
 	}
-	p384SEC1, err := x509.MarshalECPrivateKey(p384Key)
+	p384PKCS8, err := x509.MarshalPKCS8PrivateKey(p384Key)
 	if err != nil {
-		t.Fatalf("marshal P-384 EC key: %v", err)
+		t.Fatalf("marshal P-384 PKCS8 key: %v", err)
 	}
 	p384PEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "EC PRIVATE KEY",
-		Bytes: p384SEC1,
+		Bytes: p384PKCS8,
 	})
 
 	tests := map[string]struct {
