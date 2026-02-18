@@ -459,7 +459,7 @@ func decodeAPIError(resp *http.Response, payload []byte) error {
 	return apiErr
 }
 
-func (c *Client) doJSONRequest(ctx context.Context, method, path string, query url.Values, requestBody any, responseBody any, expectedStatusCodes ...int) error {
+func (c *Client) doJSONRequest(ctx context.Context, method, path string, query url.Values, requestBody, responseBody any, expectedStatusCodes ...int) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
