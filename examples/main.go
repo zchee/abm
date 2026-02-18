@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"golang.org/x/oauth2"
 
 	"github.com/zchee/abm"
 )
@@ -66,15 +65,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client := oauth2.NewClient(ctx, ts)
-	resp, err := client.Get("https://api-business.apple.com/v1/orgDevices")
+	client, err := abm.NewClient(nil, ts)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
 
-	var out abm.OrgDevicesResponse
-	if err := json.UnmarshalRead(resp.Body, &out); err != nil {
+	out, err := client.GetOrgDevices(ctx, &abm.GetOrgDevicesOptions{
+		Fields: []string{
+			"partNumber",
+			"serialNumber",
+		},
+		Limit: 100,
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 
