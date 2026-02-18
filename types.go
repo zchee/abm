@@ -29,13 +29,13 @@ type OrgDevicesResponse struct {
 // OrgDevice is the data structure that represents an organization device resource.
 type OrgDevice struct {
 	// The resource’s attributes.
-	Attributes OrgDeviceAttributes `json:"attributes,omitzero"`
+	Attributes *OrgDeviceAttributes `json:"attributes,omitzero"`
 	// The opaque resource ID that uniquely identifies the resource.
 	ID string `json:"id"`
 	// Navigational links that include the self-link.
 	Links Links `json:"links,omitzero"`
 	// Navigational links to related data and included resource types and IDs.
-	Relationships *OrgDeviceRelationships `json:"relationships"`
+	Relationships OrgDeviceRelationships `json:"relationships"`
 	// The resource type. Always "orgDevices".
 	Type string `json:"type,omitzero"`
 }
