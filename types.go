@@ -16,30 +16,31 @@
 
 package abm
 
-import (
-	"time"
-)
+import "time"
 
-// OrgDevicesResponse a response that contains a single organization device resource.
+// OrgDevicesResponse contains a list of organization device resources.
 type OrgDevicesResponse struct {
-	Data  []OrgDevice        `json:"data,omitzero"`
-	Links PagedDocumentLinks `json:"links,omitzero"`
+	Data  []OrgDevice        `json:"data"`
+	Links PagedDocumentLinks `json:"links"`
+	Meta  *PagingInformation `json:"meta,omitempty"`
 }
 
-// OrgDevice is the data structure that represents an organization device resource.
+// OrgDeviceResponse contains a single organization device resource.
+type OrgDeviceResponse struct {
+	Data  OrgDevice     `json:"data"`
+	Links DocumentLinks `json:"links"`
+}
+
+// OrgDevice represents an organization device resource.
 type OrgDevice struct {
-	// The resource’s attributes.
-	Attributes *OrgDeviceAttributes `json:"attributes,omitzero"`
-	// The opaque resource ID that uniquely identifies the resource.
-	ID string `json:"id"`
-	// Navigational links that include the self-link.
-	Links Links `json:"links,omitzero"`
-	// Navigational links to related data and included resource types and IDs.
-	Relationships OrgDeviceRelationships `json:"relationships"`
-	// The resource type. Always "orgDevices".
-	Type string `json:"type,omitzero"`
+	Attributes    *OrgDeviceAttributes    `json:"attributes,omitempty"`
+	ID            string                  `json:"id"`
+	Links         *ResourceLinks          `json:"links,omitempty"`
+	Relationships *OrgDeviceRelationships `json:"relationships,omitempty"`
+	Type          string                  `json:"type"`
 }
 
+// OrgDeviceAttributesProductFamily is the product family of an organization device.
 type OrgDeviceAttributesProductFamily string
 
 const (
@@ -51,6 +52,7 @@ const (
 	ProductFamilyVision  OrgDeviceAttributesProductFamily = "Vision"
 )
 
+// OrgDeviceAttributesPurchaseSourceType is the purchase source type of an organization device.
 type OrgDeviceAttributesPurchaseSourceType string
 
 const (
@@ -59,6 +61,7 @@ const (
 	PurchaseSourceTypeManuallyAdded OrgDeviceAttributesPurchaseSourceType = "MANUALLY_ADDED"
 )
 
+// OrgDeviceAttributesStatus is the assignment status of an organization device.
 type OrgDeviceAttributesStatus string
 
 const (
@@ -66,99 +69,324 @@ const (
 	StatusUnAssigned OrgDeviceAttributesStatus = "UNASSIGNED"
 )
 
-// OrgDeviceAttributes is the resource’s attributes.
+// OrgDeviceAttributes contains attributes for an organization device resource.
 type OrgDeviceAttributes struct {
-	// The date and time of adding the device to an organization.
-	AddedToOrgDateTime time.Time `json:"addedToOrgDateTime"`
-	// The date and time the device was released from an organization.
-	// This will be null if the device hasn’t been released.
-	// Currently only querying by a single device is supported. Batch device queries aren’t currently supported for this property.
-	ReleasedFromOrgDateTime time.Time `json:"releasedFromOrgDateTime,omitzero"`
-	// The color of the device.
-	Color string `json:"color"`
-	// The capacity of the device.
-	DeviceCapacity string `json:"deviceCapacity"`
-	// The model name.
-	DeviceModel string `json:"deviceModel"`
-	// The device’s EID (if available).
-	EID string `json:"eid,omitzero"`
-	// The device’s IMEI (if available).
-	IMEI []string `json:"imei,omitempty"`
-	// The device’s MEID (if available).
-	MEID []string `json:"meid,omitempty"`
-	// The device’s Wi-Fi MAC address.
-	WifiMacAddress string `json:"wifiMacAddress,omitzero"`
-	// The device’s Bluetooth MAC address.
-	BluetoothMacAddress string `json:"bluetoothMacAddress,omitempty"`
-	// The device’s built-in Ethernet MAC addresses.
-	EthernetMacAddress []string `json:"ethernetMacAddress,omitempty"`
-	// The date and time of placing the device’s order.
-	OrderDateTime time.Time `json:"orderDateTime"`
-	// The order number of the device.
-	OrderNumber string `json:"orderNumber"`
-	// The part number of the device.
-	PartNumber string `json:"partNumber"`
-	// The device’s Apple product family.
-	ProductFamily OrgDeviceAttributesProductFamily `json:"productFamily"`
-	// The device’s product type.
-	ProductType string `json:"productType"`
-	// The device’s purchase source type.
-	PurchaseSourceType OrgDeviceAttributesPurchaseSourceType `json:"purchaseSourceType"`
-	// The unique ID of the purchase source type: Apple Customer Number or Reseller Number
-	PurchaseSourceID string `json:"purchaseSourceId,omitzero"`
-	// The device’s serial number.
-	SerialNumber string `json:"serialNumber"`
-	// The devices status. If [StatusAssigned], use a separate API to get the information of the [StatusUnAssigned] server.
-	Status OrgDeviceAttributesStatus `json:"status"`
-	// The date and time of the most-recent update for the device.
-	UpdatedDateTime time.Time `json:"updatedDateTime"`
+	AddedToOrgDateTime      *time.Time                            `json:"addedToOrgDateTime,omitempty"`
+	ReleasedFromOrgDateTime *time.Time                            `json:"releasedFromOrgDateTime,omitempty"`
+	Color                   string                                `json:"color,omitempty"`
+	DeviceCapacity          string                                `json:"deviceCapacity,omitempty"`
+	DeviceModel             string                                `json:"deviceModel,omitempty"`
+	EID                     string                                `json:"eid,omitempty"`
+	IMEI                    []string                              `json:"imei,omitempty"`
+	MEID                    []string                              `json:"meid,omitempty"`
+	WifiMacAddress          []string                              `json:"wifiMacAddress,omitempty"`
+	BluetoothMacAddress     []string                              `json:"bluetoothMacAddress,omitempty"`
+	EthernetMacAddress      []string                              `json:"ethernetMacAddress,omitempty"`
+	OrderDateTime           *time.Time                            `json:"orderDateTime,omitempty"`
+	OrderNumber             string                                `json:"orderNumber,omitempty"`
+	PartNumber              string                                `json:"partNumber,omitempty"`
+	ProductFamily           OrgDeviceAttributesProductFamily      `json:"productFamily,omitempty"`
+	ProductType             string                                `json:"productType,omitempty"`
+	PurchaseSourceType      OrgDeviceAttributesPurchaseSourceType `json:"purchaseSourceType,omitempty"`
+	PurchaseSourceID        string                                `json:"purchaseSourceId,omitempty"`
+	SerialNumber            string                                `json:"serialNumber,omitempty"`
+	Status                  OrgDeviceAttributesStatus             `json:"status,omitempty"`
+	UpdatedDateTime         *time.Time                            `json:"updatedDateTime,omitempty"`
 }
 
-// Links navigational links.
-type Links struct {
-	// The link that produces the current document.
-	Self string `json:"self"`
-}
-
-// The relationships you include in the request, and those that you can operate on.
+// OrgDeviceRelationships contains links to relationship resources for an org device.
 type OrgDeviceRelationships struct {
-	// The relationship representing a device and its assigned device management
-	// service.
-	AssignedServer *OrgDeviceRelationshipsAssignedServer `json:"assignedServer,omitempty"`
-
-	// The relationship representing a device and its AppleCare Coverage.
+	AssignedServer    *OrgDeviceRelationshipsAssignedServer    `json:"assignedServer,omitempty"`
 	AppleCareCoverage *OrgDeviceRelationshipsAppleCareCoverage `json:"appleCareCoverage,omitempty"`
 }
 
-// The links that describe the relationship between the resources.
+// OrgDeviceRelationshipsAssignedServer describes assigned-server relationship links.
 type OrgDeviceRelationshipsAssignedServer struct {
-	// Links corresponds to the JSON schema field "links".
 	Links *RelationshipLinks `json:"links,omitempty"`
 }
 
-// The links that describe the relationship between the resources.
+// OrgDeviceRelationshipsAppleCareCoverage describes apple-care relationship links.
 type OrgDeviceRelationshipsAppleCareCoverage struct {
-	// Links corresponds to the JSON schema field "links".
 	Links *RelationshipLinks `json:"links,omitempty"`
 }
 
-// Links related to the response document, including self-links.
-type RelationshipLinks struct {
-	// Include corresponds to the JSON schema field "include".
-	Include string `json:"include,omitzero"`
-
-	// The link to the related documents.
-	Related string `json:"related,omitzero"`
-
-	// The link that produces the current document.
-	Self string `json:"self,omitzero"`
+// OrgDeviceAssignedServerLinkageResponse contains the assigned server linkage for a device.
+type OrgDeviceAssignedServerLinkageResponse struct {
+	Data  OrgDeviceAssignedServerLinkageData `json:"data"`
+	Links DocumentLinks                      `json:"links"`
 }
 
-// PagedDocumentLinks navigational links that include the self-link.
+// OrgDeviceAssignedServerLinkageData is the assigned server linkage object.
+type OrgDeviceAssignedServerLinkageData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// MdmServersResponse contains a list of MDM server resources.
+type MdmServersResponse struct {
+	Data     []MdmServer        `json:"data"`
+	Included []OrgDevice        `json:"included,omitempty"`
+	Links    PagedDocumentLinks `json:"links"`
+	Meta     *PagingInformation `json:"meta,omitempty"`
+}
+
+// MdmServerResponse contains a single MDM server resource.
+type MdmServerResponse struct {
+	Data     MdmServer     `json:"data"`
+	Included []OrgDevice   `json:"included,omitempty"`
+	Links    DocumentLinks `json:"links"`
+}
+
+// MdmServer is a device management service resource.
+type MdmServer struct {
+	Attributes    *MdmServerAttributes    `json:"attributes,omitempty"`
+	ID            string                  `json:"id"`
+	Relationships *MdmServerRelationships `json:"relationships,omitempty"`
+	Type          string                  `json:"type"`
+}
+
+// MdmServerAttributes are fields describing an MDM server.
+type MdmServerAttributes struct {
+	CreatedDateTime *time.Time `json:"createdDateTime,omitempty"`
+	ServerName      string     `json:"serverName,omitempty"`
+	ServerType      string     `json:"serverType,omitempty"`
+	UpdatedDateTime *time.Time `json:"updatedDateTime,omitempty"`
+}
+
+// MdmServerRelationships contains relationship resources for an MDM server.
+type MdmServerRelationships struct {
+	Devices *MdmServerRelationshipsDevices `json:"devices,omitempty"`
+}
+
+// MdmServerRelationshipsDevices represents the devices relationship in an MDM server.
+type MdmServerRelationshipsDevices struct {
+	Data  []MdmServerRelationshipsDevicesData `json:"data,omitempty"`
+	Links *RelationshipLinks                  `json:"links,omitempty"`
+	Meta  *PagingInformation                  `json:"meta,omitempty"`
+}
+
+// MdmServerRelationshipsDevicesData is an org-device linkage in an MDM-server relationship.
+type MdmServerRelationshipsDevicesData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// MdmServerDevicesLinkagesResponse contains org-device linkages for a specific MDM server.
+type MdmServerDevicesLinkagesResponse struct {
+	Data  []MdmServerDevicesLinkageData `json:"data"`
+	Links PagedDocumentLinks            `json:"links"`
+	Meta  *PagingInformation            `json:"meta,omitempty"`
+}
+
+// MdmServerDevicesLinkageData contains an org-device linkage entry.
+type MdmServerDevicesLinkageData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// OrgDeviceActivityResponse contains a single org-device activity resource.
+type OrgDeviceActivityResponse struct {
+	Data  OrgDeviceActivity `json:"data"`
+	Links DocumentLinks     `json:"links"`
+}
+
+// OrgDeviceActivity is an activity resource for assigning or unassigning devices.
+type OrgDeviceActivity struct {
+	Attributes *OrgDeviceActivityAttributes `json:"attributes,omitempty"`
+	ID         string                       `json:"id"`
+	Links      *ResourceLinks               `json:"links,omitempty"`
+	Type       string                       `json:"type"`
+}
+
+// OrgDeviceActivityAttributes are fields describing an org-device activity.
+type OrgDeviceActivityAttributes struct {
+	CompletedDateTime *time.Time `json:"completedDateTime,omitempty"`
+	CreatedDateTime   *time.Time `json:"createdDateTime,omitempty"`
+	DownloadURL       string     `json:"downloadUrl,omitempty"`
+	Status            string     `json:"status,omitempty"`
+	SubStatus         string     `json:"subStatus,omitempty"`
+}
+
+// OrgDeviceActivityType is the type of an org-device activity.
+type OrgDeviceActivityType string
+
+const (
+	OrgDeviceActivityTypeAssignDevices   OrgDeviceActivityType = "ASSIGN_DEVICES"
+	OrgDeviceActivityTypeUnassignDevices OrgDeviceActivityType = "UNASSIGN_DEVICES"
+)
+
+// OrgDeviceActivityCreateRequest is the request payload for creating org-device activities.
+type OrgDeviceActivityCreateRequest struct {
+	Data OrgDeviceActivityCreateRequestData `json:"data"`
+}
+
+// OrgDeviceActivityCreateRequestData is the data section of activity creation requests.
+type OrgDeviceActivityCreateRequestData struct {
+	Attributes    OrgDeviceActivityCreateRequestDataAttributes    `json:"attributes"`
+	Relationships OrgDeviceActivityCreateRequestDataRelationships `json:"relationships"`
+	Type          string                                          `json:"type"`
+}
+
+// OrgDeviceActivityCreateRequestDataAttributes are activity creation attributes.
+type OrgDeviceActivityCreateRequestDataAttributes struct {
+	ActivityType OrgDeviceActivityType `json:"activityType"`
+}
+
+// OrgDeviceActivityCreateRequestDataRelationships are activity creation relationships.
+type OrgDeviceActivityCreateRequestDataRelationships struct {
+	Devices   OrgDeviceActivityCreateRequestDataRelationshipsDevices   `json:"devices"`
+	MdmServer OrgDeviceActivityCreateRequestDataRelationshipsMdmServer `json:"mdmServer"`
+}
+
+// OrgDeviceActivityCreateRequestDataRelationshipsDevices links devices in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsDevices struct {
+	Data []OrgDeviceActivityCreateRequestDataRelationshipsDevicesData `json:"data"`
+}
+
+// OrgDeviceActivityCreateRequestDataRelationshipsDevicesData is a device linkage used in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsDevicesData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// OrgDeviceActivityCreateRequestDataRelationshipsMdmServer links an MDM server in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsMdmServer struct {
+	Data OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData `json:"data"`
+}
+
+// OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData is an MDM-server linkage used in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// AppleCareCoverageResponse contains AppleCare coverage resources for a device.
+type AppleCareCoverageResponse struct {
+	Data  []AppleCareCoverage `json:"data"`
+	Links PagedDocumentLinks  `json:"links"`
+	Meta  *PagingInformation  `json:"meta,omitempty"`
+}
+
+// AppleCareCoverage contains AppleCare coverage data.
+type AppleCareCoverage struct {
+	Attributes *AppleCareCoverageAttributes `json:"attributes,omitempty"`
+	ID         string                       `json:"id"`
+	Type       string                       `json:"type"`
+}
+
+// AppleCareCoveragePaymentType is the payment type of an AppleCare coverage plan.
+type AppleCareCoveragePaymentType string
+
+const (
+	AppleCareCoveragePaymentTypeABESubscription AppleCareCoveragePaymentType = "ABE_SUBSCRIPTION"
+	AppleCareCoveragePaymentTypePaidUpFront     AppleCareCoveragePaymentType = "PAID_UP_FRONT"
+	AppleCareCoveragePaymentTypeSubscription    AppleCareCoveragePaymentType = "SUBSCRIPTION"
+	AppleCareCoveragePaymentTypeNone            AppleCareCoveragePaymentType = "NONE"
+)
+
+// AppleCareCoverageStatus is the status of an AppleCare coverage plan.
+type AppleCareCoverageStatus string
+
+const (
+	AppleCareCoverageStatusActive   AppleCareCoverageStatus = "ACTIVE"
+	AppleCareCoverageStatusInactive AppleCareCoverageStatus = "INACTIVE"
+)
+
+// AppleCareCoverageAttributes contains AppleCare coverage attributes.
+type AppleCareCoverageAttributes struct {
+	AgreementNumber        string                       `json:"agreementNumber,omitempty"`
+	ContractCancelDateTime *time.Time                   `json:"contractCancelDateTime,omitempty"`
+	Description            string                       `json:"description,omitempty"`
+	EndDateTime            *time.Time                   `json:"endDateTime,omitempty"`
+	IsCanceled             *bool                        `json:"isCanceled,omitempty"`
+	IsRenewable            *bool                        `json:"isRenewable,omitempty"`
+	PaymentType            AppleCareCoveragePaymentType `json:"paymentType,omitempty"`
+	StartDateTime          *time.Time                   `json:"startDateTime,omitempty"`
+	Status                 AppleCareCoverageStatus      `json:"status,omitempty"`
+}
+
+// DocumentLinks contains links related to the current document.
+type DocumentLinks struct {
+	Self string `json:"self"`
+}
+
+// ResourceLinks contains self-links for a requested resource.
+type ResourceLinks struct {
+	Self string `json:"self,omitempty"`
+}
+
+// RelationshipLinks contains links for a relationship block.
+type RelationshipLinks struct {
+	Include string `json:"include,omitempty"`
+	Related string `json:"related,omitempty"`
+	Self    string `json:"self,omitempty"`
+}
+
+// PagedDocumentLinks contains navigation links for paginated responses.
 type PagedDocumentLinks struct {
-	Links
-	// The link to the first page of documents.
-	First string `json:"first,omitzero"`
-	// The link to the next page of documents.
-	Next string `json:"next,omitzero"`
+	First string `json:"first,omitempty"`
+	Next  string `json:"next,omitempty"`
+	Self  string `json:"self"`
+}
+
+// PagingInformation contains pagination metadata.
+type PagingInformation struct {
+	Paging PagingInformationPaging `json:"paging"`
+}
+
+// PagingInformationPaging contains pagination state values.
+type PagingInformationPaging struct {
+	Limit      int    `json:"limit"`
+	NextCursor string `json:"nextCursor,omitempty"`
+	Total      *int   `json:"total,omitempty"`
+}
+
+// ErrorResponse contains ABM API errors.
+type ErrorResponse struct {
+	Errors []ErrorResponseError `json:"errors,omitempty"`
+}
+
+// ErrorResponseError contains one ABM API error object.
+type ErrorResponseError struct {
+	Code   string         `json:"code"`
+	Detail string         `json:"detail"`
+	ID     string         `json:"id,omitempty"`
+	Links  *ErrorLinks    `json:"links,omitempty"`
+	Meta   map[string]any `json:"meta,omitempty"`
+	Source *ErrorSource   `json:"source,omitempty"`
+	Status string         `json:"status"`
+	Title  string         `json:"title"`
+}
+
+// ErrorLinks contains links related to an error object.
+type ErrorLinks struct {
+	About      string `json:"about,omitempty"`
+	Associated any    `json:"associated,omitempty"`
+}
+
+// ErrorLinksAssociated contains structured associated error-link details.
+type ErrorLinksAssociated struct {
+	Href string                    `json:"href,omitempty"`
+	Meta *ErrorLinksAssociatedMeta `json:"meta,omitempty"`
+}
+
+// ErrorLinksAssociatedMeta contains metadata for associated error links.
+type ErrorLinksAssociatedMeta struct {
+	Source string `json:"source,omitempty"`
+}
+
+// ErrorSource describes JSON Pointer or parameter source context for an error.
+type ErrorSource struct {
+	Pointer   string `json:"pointer,omitempty"`
+	Parameter string `json:"parameter,omitempty"`
+}
+
+// JSONPointer contains a JSON Pointer source.
+type JSONPointer struct {
+	Pointer string `json:"pointer"`
+}
+
+// Parameter contains an HTTP parameter source.
+type Parameter struct {
+	Parameter string `json:"parameter"`
 }
