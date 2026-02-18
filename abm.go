@@ -19,43 +19,25 @@ package abm
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/go-json-experiment/json"
-	"golang.org/x/oauth2"
 )
 
-// Client represents an Apple Business Manager (ABM) API client.
-type Client struct {
-	hc *http.Client
-}
-
-// FetchOrgDevicePartNumbers returns the orgDevices part numbers for Apple Business Manager.
-func (c *Client) FetchOrgDevicePartNumbers(ctx context.Context, httpClient *http.Client, tokenSource oauth2.TokenSource) ([]string, error) {
+// FetchOrgDevicePartNumbers returns all org-device part numbers for the organization,
+// automatically following pagination until all pages are consumed.
+func (c *Client) FetchOrgDevicePartNumbers(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, ctx.Err()
+		return nil, err
 	}
 
-	if tokenSource == nil {
-		return nil, fmt.Errorf("token source is required")
-	}
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	baseTransport := httpClient.Transport
-	if baseTransport == nil {
-		baseTransport = http.DefaultTransport
-	}
-	client := *httpClient
-	client.Transport = &oauth2.Transport{
-		Base:   baseTransport,
-		Source: tokenSource,
+	baseURL, err := c.buildURL(orgDevicesPath, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	partNumbers := make([]string, 0, 64)
 
-	for pagePartNumbers, err := range PageIterator(ctx, &client, decodeOrgDevices, "https://api-business.apple.com/v1/orgDevices") {
+	for pagePartNumbers, err := range PageIterator(ctx, c.httpClient, decodeOrgDevices, baseURL) {
 		if err != nil {
 			return nil, err
 		}
@@ -66,23 +48,16 @@ func (c *Client) FetchOrgDevicePartNumbers(ctx context.Context, httpClient *http
 }
 
 func decodeOrgDevices(payload []byte) ([]string, string, error) {
-	var response struct {
-		Data []struct {
-			Attributes struct {
-				PartNumber string `json:"partNumber"`
-			} `json:"attributes"`
-		} `json:"data"`
-		Links struct {
-			Next string `json:"next"`
-		} `json:"links"`
-	}
+	var response OrgDevicesResponse
 	if err := json.Unmarshal(payload, &response); err != nil {
 		return nil, "", fmt.Errorf("decode org devices response: %w", err)
 	}
 
 	partNumbers := make([]string, len(response.Data))
 	for i, device := range response.Data {
-		partNumbers[i] = device.Attributes.PartNumber
+		if device.Attributes != nil {
+			partNumbers[i] = device.Attributes.PartNumber
+		}
 	}
 
 	return partNumbers, response.Links.Next, nil

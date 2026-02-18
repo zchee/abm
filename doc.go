@@ -14,5 +14,5 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Package abm provides the Apple Business Manager(ABM) in Go.
+// Package abm provides a Go client for the Apple Business Manager API.
 package abm

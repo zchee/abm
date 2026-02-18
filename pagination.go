@@ -26,6 +26,10 @@ import (
 	"strings"
 )
 
+// maxPages is the maximum number of pages the iterator will fetch before stopping,
+// matching the ABM API hard limit of 1000 pages.
+const maxPages = 1000
+
 // PageDecoderFunc is a function that decodes a paginated API response payload into type T and returns the next link.
 type PageDecoderFunc[T any] func(payload []byte) (T, string, error)
 
@@ -46,20 +50,20 @@ func PageIterator[T any](ctx context.Context, client *http.Client, decoder PageD
 				return
 			}
 
-			if page >= 1000 { // 1000 is hard limit of ABM
-				yield(zero, fmt.Errorf("pagination exceeded %d pages", 1000))
+			if page >= maxPages {
+				yield(zero, fmt.Errorf("pagination exceeded %d pages", maxPages))
 				return
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, nextURL, http.NoBody)
 			if err != nil {
-				yield(zero, fmt.Errorf("build org devices request: %w", err))
+				yield(zero, fmt.Errorf("build paginated request: %w", err))
 				return
 			}
 
 			resp, err := client.Do(req)
 			if err != nil {
-				yield(zero, fmt.Errorf("org devices request: %w", err))
+				yield(zero, fmt.Errorf("paginated request: %w", err))
 				return
 			}
 

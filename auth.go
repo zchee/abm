@@ -92,6 +92,11 @@ func NewAssertion(ctx context.Context, clientID, keyID, privateKeyPath string) (
 	return signed, nil
 }
 
+// parseECDSAPrivateKeyFromPEM parses an ECDSA P-256 private key from PEM-encoded bytes.
+// ABM private keys are stored in PKCS#8 DER format but may carry either the
+// "EC PRIVATE KEY" or "PRIVATE KEY" PEM block label, so both are handled via
+// x509.ParsePKCS8PrivateKey rather than x509.ParseECPrivateKey (which expects
+// the SEC 1 / RFC 5915 encoding used by the "EC PRIVATE KEY" label in OpenSSL).
 func parseECDSAPrivateKeyFromPEM(pemBytes []byte) (*ecdsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
@@ -99,10 +104,10 @@ func parseECDSAPrivateKeyFromPEM(pemBytes []byte) (*ecdsa.PrivateKey, error) {
 	}
 
 	switch block.Type {
-	case "EC PRIVATE KEY", "PRIVATE KEY": // TODO(zchee): Why can't use [x509.ParseECPrivateKey] even if ABM PEM is "EC PRIVATE KEY"?
+	case "EC PRIVATE KEY", "PRIVATE KEY":
 		parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
-			return nil, fmt.Errorf("parse %q private key: %w", block.Bytes, err)
+			return nil, fmt.Errorf("parse %q private key: %w", block.Type, err)
 		}
 
 		key, ok := parsed.(*ecdsa.PrivateKey)
@@ -130,10 +135,6 @@ var _ oauth2.TokenSource = (*clientCredentialsTokenSource)(nil)
 
 // NewTokenSource returns a token source for Apple Business Manager using a JWT client assertion.
 func NewTokenSource(ctx context.Context, httpClient *http.Client, clientID, clientAssertion, scope string) (oauth2.TokenSource, error) {
-	return newTokenSource(ctx, httpClient, clientID, clientAssertion, scope)
-}
-
-func newTokenSource(ctx context.Context, httpClient *http.Client, clientID, clientAssertion, scope string) (oauth2.TokenSource, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
