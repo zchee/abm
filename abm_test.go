@@ -63,12 +63,16 @@ func TestClient_FetchOrgDevicePartNumbersCanceledContext(t *testing.T) {
 		t.Fatalf("context error: %v", err)
 	}
 
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "token"})
+	client, err := NewClient(http.DefaultClient, tokenSource)
+	if err != nil {
+		t.Fatalf("NewClient returned error: %v", err)
+	}
+
 	canceledCtx, cancel := context.WithCancel(ctx)
 	cancel()
 
-	client := &Client{}
-	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "token"})
-	_, err := client.FetchOrgDevicePartNumbers(canceledCtx, http.DefaultClient, tokenSource)
+	_, err = client.FetchOrgDevicePartNumbers(canceledCtx)
 	if err == nil {
 		t.Fatal("expected error for canceled context")
 	}
@@ -83,8 +87,7 @@ func TestClient_FetchOrgDevicePartNumbersMissingTokenSource(t *testing.T) {
 		t.Fatalf("context error: %v", err)
 	}
 
-	client := &Client{}
-	_, err := client.FetchOrgDevicePartNumbers(ctx, http.DefaultClient, nil)
+	_, err := NewClient(http.DefaultClient, nil)
 	if err == nil {
 		t.Fatal("expected error for missing token source")
 	}
@@ -141,10 +144,14 @@ func TestClient_FetchOrgDevicePartNumbersSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatalf("newTLSServerHTTPClient returned error: %v", err)
 			}
-			tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "test-token"})
-			client := &Client{}
 
-			got, err := client.FetchOrgDevicePartNumbers(ctx, httpClient, tokenSource)
+			tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "test-token"})
+			client, err := NewClientWithBaseURL(httpClient, tokenSource, server.URL)
+			if err != nil {
+				t.Fatalf("NewClientWithBaseURL returned error: %v", err)
+			}
+
+			got, err := client.FetchOrgDevicePartNumbers(ctx)
 			if err != nil {
 				t.Fatalf("FetchOrgDevicePartNumbers returned error: %v", err)
 			}

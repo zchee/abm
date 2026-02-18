@@ -52,7 +52,7 @@ func BenchmarkDecodeOrgDevices(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				partNumbers, next, err := decodeOrgDevices(payload)
 				if err != nil {
 					b.Fatalf("decodeOrgDevices returned error: %v", err)
@@ -117,13 +117,16 @@ func BenchmarkClientFetchOrgDevicePartNumbers(b *testing.B) {
 	}
 
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "bench-token"})
-	client := &Client{}
+	client, err := NewClientWithBaseURL(httpClient, tokenSource, server.URL)
+	if err != nil {
+		b.Fatalf("NewClientWithBaseURL returned error: %v", err)
+	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		partNumbers, err := client.FetchOrgDevicePartNumbers(ctx, httpClient, tokenSource)
+	for b.Loop() {
+		partNumbers, err := client.FetchOrgDevicePartNumbers(ctx)
 		if err != nil {
 			b.Fatalf("FetchOrgDevicePartNumbers returned error: %v", err)
 		}
@@ -142,7 +145,7 @@ func buildOrgDevicesPageJSON(pageNumber, pageSize int, nextLink string) []byte {
 
 	builder.Grow(pageSize * 640)
 	builder.WriteString(`{"data":[`)
-	for i := 0; i < pageSize; i++ {
+	for i := range pageSize {
 		if i > 0 {
 			builder.WriteByte(',')
 		}

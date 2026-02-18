@@ -368,7 +368,7 @@ func TestNewClientCredentialsTokenSourceCanceledContext(t *testing.T) {
 	canceledCtx, cancel := context.WithCancel(ctx)
 	cancel()
 
-	_, err := newTokenSource(canceledCtx, http.DefaultClient, "client-id", "assertion", ScopeBusinessAPI)
+	_, err := NewTokenSource(canceledCtx, http.DefaultClient, "client-id", "assertion", ScopeBusinessAPI)
 	if err == nil {
 		t.Fatal("expected error for canceled context")
 	}
@@ -409,7 +409,7 @@ func TestClientCredentialsTokenSourceFormBody(t *testing.T) {
 		t.Fatalf("newTLSServerHTTPClient returned error: %v", err)
 	}
 
-	source, err := newTokenSource(ctx, httpClient, "client-id", "assertion", "business.api")
+	source, err := NewTokenSource(ctx, httpClient, "client-id", "assertion", "business.api")
 	if err != nil {
 		t.Fatalf("newClientCredentialsTokenSource returned error: %v", err)
 	}
