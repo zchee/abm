@@ -41,7 +41,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	assertion, err := abm.NewAssertion(ctx, "<client-id>", "<key-id>", "/path/to/private-key.pem")
+	assertion, err := abm.NewAssertion(ctx, "<client-id>", "<key-id>", "/path/to/private-key.pem or $(cat /path/to/private-key.pem)")
 	if err != nil {
 		log.Fatal(err)
 	}

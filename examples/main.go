@@ -21,6 +21,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
@@ -37,7 +39,7 @@ var (
 func init() {
 	flag.StringVar(&clientID, "client-id", "", "ABM client id")
 	flag.StringVar(&keyID, "key-id", "", "ABM key id")
-	flag.StringVar(&privateKeyPath, "private-key", "", "path to private-key filepath")
+	flag.StringVar(&privateKeyPath, "private-key", "", "path to private-key filepath, or raw private-key data")
 }
 
 func main() {
@@ -53,7 +55,8 @@ func main() {
 		log.Fatal("-private-key flag is required")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	assertion, err := abm.NewAssertion(ctx, clientID, keyID, privateKeyPath)
 	if err != nil {

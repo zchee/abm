@@ -49,17 +49,22 @@ const (
 )
 
 // NewAssertion creates a signed client assertion for Apple Business Manager (ABM).
-func NewAssertion(ctx context.Context, clientID, keyID, privateKeyPath string) (string, error) {
+func NewAssertion(ctx context.Context, clientID, keyID, privateKey string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
 
-	privateKey, err := os.ReadFile(privateKeyPath)
-	if err != nil {
-		return "", fmt.Errorf("read private key: %w", err)
+	var pkey []byte
+	if _, err := os.Stat(privateKey); err == nil {
+		pkey, err = os.ReadFile(privateKey)
+		if err != nil {
+			return "", fmt.Errorf("read private key: %w", err)
+		}
+	} else {
+		pkey = []byte(privateKey)
 	}
 
-	ecKey, err := parseECDSAPrivateKeyFromPEM(privateKey)
+	ecKey, err := parseECDSAPrivateKeyFromPEM(pkey)
 	if err != nil {
 		return "", fmt.Errorf("parse private key: %w", err)
 	}
