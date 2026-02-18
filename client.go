@@ -92,23 +92,23 @@ type GetOrgDeviceAppleCareCoverageOptions struct {
 	Limit  int
 }
 
-// GetMdmServersOptions contains optional query parameters for GetMdmServers.
-type GetMdmServersOptions struct {
+// GetMDMServersOptions contains optional query parameters for [Client.GetMDMServers].
+type GetMDMServersOptions struct {
 	Fields []string
 	Limit  int
 }
 
-// GetMdmServerDeviceLinkagesOptions contains optional query parameters for GetMdmServerDeviceLinkages.
-type GetMdmServerDeviceLinkagesOptions struct {
+// GetMDMServerDeviceLinkagesOptions contains optional query parameters for [Client.GetMDMServerDeviceLinkages].
+type GetMDMServerDeviceLinkagesOptions struct {
 	Limit int
 }
 
-// GetOrgDeviceAssignedServerOptions contains optional query parameters for GetOrgDeviceAssignedServer.
+// GetOrgDeviceAssignedServerOptions contains optional query parameters for [Client.GetOrgDeviceAssignedServer].
 type GetOrgDeviceAssignedServerOptions struct {
 	Fields []string
 }
 
-// GetOrgDeviceActivityOptions contains optional query parameters for GetOrgDeviceActivity.
+// GetOrgDeviceActivityOptions contains optional query parameters for [Client.GetOrgDeviceActivity].
 type GetOrgDeviceActivityOptions struct {
 	Fields []string
 }
@@ -219,8 +219,8 @@ func (c *Client) GetOrgDeviceAppleCareCoverage(ctx context.Context, orgDeviceID 
 	return &response, nil
 }
 
-// GetMdmServers gets a list of device management services.
-func (c *Client) GetMdmServers(ctx context.Context, options *GetMdmServersOptions) (*MdmServersResponse, error) {
+// GetMDMServers gets a list of device management services.
+func (c *Client) GetMDMServers(ctx context.Context, options *GetMDMServersOptions) (*MDMServersResponse, error) {
 	var fields []string
 	var limit int
 	if options != nil {
@@ -233,7 +233,7 @@ func (c *Client) GetMdmServers(ctx context.Context, options *GetMdmServersOption
 		return nil, err
 	}
 
-	var response MdmServersResponse
+	var response MDMServersResponse
 	if err := c.doJSONRequest(ctx, http.MethodGet, mdmServersPath, query, nil, &response, http.StatusOK); err != nil {
 		return nil, err
 	}
@@ -241,8 +241,8 @@ func (c *Client) GetMdmServers(ctx context.Context, options *GetMdmServersOption
 	return &response, nil
 }
 
-// GetMdmServerDeviceLinkages gets all org-device serial IDs linked to a device management service.
-func (c *Client) GetMdmServerDeviceLinkages(ctx context.Context, mdmServerID string, options *GetMdmServerDeviceLinkagesOptions) (*MdmServerDevicesLinkagesResponse, error) {
+// GetMDMServerDeviceLinkages gets all org-device serial IDs linked to a device management service.
+func (c *Client) GetMDMServerDeviceLinkages(ctx context.Context, mdmServerID string, options *GetMDMServerDeviceLinkagesOptions) (*MDMServerDevicesLinkagesResponse, error) {
 	escapedID, err := validateAndEscapeID("mdm server ID", mdmServerID)
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func (c *Client) GetMdmServerDeviceLinkages(ctx context.Context, mdmServerID str
 		}
 	}
 
-	var response MdmServerDevicesLinkagesResponse
+	var response MDMServerDevicesLinkagesResponse
 	path := joinPath(mdmServersPath, escapedID, "relationships", "devices")
 	if err := c.doJSONRequest(ctx, http.MethodGet, path, query, nil, &response, http.StatusOK); err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ func (c *Client) GetOrgDeviceAssignedServerLinkage(ctx context.Context, orgDevic
 }
 
 // GetOrgDeviceAssignedServer gets assigned device-management service information for a device.
-func (c *Client) GetOrgDeviceAssignedServer(ctx context.Context, orgDeviceID string, options *GetOrgDeviceAssignedServerOptions) (*MdmServerResponse, error) {
+func (c *Client) GetOrgDeviceAssignedServer(ctx context.Context, orgDeviceID string, options *GetOrgDeviceAssignedServerOptions) (*MDMServerResponse, error) {
 	escapedID, err := validateAndEscapeID("org device ID", orgDeviceID)
 	if err != nil {
 		return nil, err
@@ -292,7 +292,7 @@ func (c *Client) GetOrgDeviceAssignedServer(ctx context.Context, orgDeviceID str
 		setFieldsQuery(query, "fields[mdmServers]", options.Fields)
 	}
 
-	var response MdmServerResponse
+	var response MDMServerResponse
 	path := joinPath(orgDevicesPath, escapedID, "assignedServer")
 	if err := c.doJSONRequest(ctx, http.MethodGet, path, query, nil, &response, http.StatusOK); err != nil {
 		return nil, err

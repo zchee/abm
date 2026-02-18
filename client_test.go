@@ -149,8 +149,8 @@ func TestClient_ABMOperationsSuccess(t *testing.T) {
 						},
 					},
 				},
-				MdmServer: OrgDeviceActivityCreateRequestDataRelationshipsMdmServer{
-					Data: OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData{
+				MDMServer: OrgDeviceActivityCreateRequestDataRelationshipsMDMServer{
+					Data: OrgDeviceActivityCreateRequestDataRelationshipsMDMServerData{
 						ID:   "mdm-1",
 						Type: "mdmServers",
 					},
@@ -248,7 +248,7 @@ func TestClient_ABMOperationsSuccess(t *testing.T) {
 			statusCode:   http.StatusOK,
 			responseBody: `{"data":[{"id":"mdm-1","type":"mdmServers","attributes":{"serverName":"Primary MDM"}}],"links":{"self":"https://api-business.apple.com/v1/mdmServers"}}`,
 			invoke: func(ctx context.Context, client *Client) error {
-				resp, err := client.GetMdmServers(ctx, &GetMdmServersOptions{
+				resp, err := client.GetMDMServers(ctx, &GetMDMServersOptions{
 					Fields: []string{"serverName"},
 					Limit:  1,
 				})
@@ -271,7 +271,7 @@ func TestClient_ABMOperationsSuccess(t *testing.T) {
 			statusCode:   http.StatusOK,
 			responseBody: `{"data":[{"id":"device-1","type":"orgDevices"},{"id":"device-2","type":"orgDevices"}],"links":{"self":"https://api-business.apple.com/v1/mdmServers/mdm-1/relationships/devices"}}`,
 			invoke: func(ctx context.Context, client *Client) error {
-				resp, err := client.GetMdmServerDeviceLinkages(ctx, "mdm-1", &GetMdmServerDeviceLinkagesOptions{Limit: 2})
+				resp, err := client.GetMDMServerDeviceLinkages(ctx, "mdm-1", &GetMDMServerDeviceLinkagesOptions{Limit: 2})
 				if err != nil {
 					return err
 				}
@@ -465,7 +465,7 @@ func TestClient_ParameterValidation(t *testing.T) {
 		},
 		"error: missing mdm server id": {
 			invoke: func() error {
-				_, err := client.GetMdmServerDeviceLinkages(ctx, "  ", nil)
+				_, err := client.GetMDMServerDeviceLinkages(ctx, "  ", nil)
 				return err
 			},
 			wantErr: true,
@@ -486,7 +486,7 @@ func TestClient_ParameterValidation(t *testing.T) {
 		},
 		"error: too large limit": {
 			invoke: func() error {
-				_, err := client.GetMdmServers(ctx, &GetMdmServersOptions{Limit: 1001})
+				_, err := client.GetMDMServers(ctx, &GetMDMServersOptions{Limit: 1001})
 				return err
 			},
 			wantErr: true,

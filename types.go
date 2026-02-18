@@ -16,7 +16,9 @@
 
 package abm
 
-import "time"
+import (
+	"time"
+)
 
 // OrgDevicesResponse contains a list of organization device resources.
 type OrgDevicesResponse struct {
@@ -122,64 +124,64 @@ type OrgDeviceAssignedServerLinkageData struct {
 	Type string `json:"type"`
 }
 
-// MdmServersResponse contains a list of MDM server resources.
-type MdmServersResponse struct {
-	Data     []MdmServer        `json:"data"`
+// MDMServersResponse contains a list of MDM server resources.
+type MDMServersResponse struct {
+	Data     []MDMServer        `json:"data"`
 	Included []OrgDevice        `json:"included,omitempty"`
 	Links    PagedDocumentLinks `json:"links"`
 	Meta     *PagingInformation `json:"meta,omitempty"`
 }
 
-// MdmServerResponse contains a single MDM server resource.
-type MdmServerResponse struct {
-	Data     MdmServer     `json:"data"`
+// MDMServerResponse contains a single MDM server resource.
+type MDMServerResponse struct {
+	Data     MDMServer     `json:"data"`
 	Included []OrgDevice   `json:"included,omitempty"`
 	Links    DocumentLinks `json:"links"`
 }
 
-// MdmServer is a device management service resource.
-type MdmServer struct {
-	Attributes    *MdmServerAttributes    `json:"attributes,omitempty"`
+// MDMServer is a device management service resource.
+type MDMServer struct {
+	Attributes    *MDMServerAttributes    `json:"attributes,omitempty"`
 	ID            string                  `json:"id"`
-	Relationships *MdmServerRelationships `json:"relationships,omitempty"`
+	Relationships *MDMServerRelationships `json:"relationships,omitempty"`
 	Type          string                  `json:"type"`
 }
 
-// MdmServerAttributes are fields describing an MDM server.
-type MdmServerAttributes struct {
+// MDMServerAttributes are fields describing an MDM server.
+type MDMServerAttributes struct {
 	CreatedDateTime *time.Time `json:"createdDateTime,omitempty"`
 	ServerName      string     `json:"serverName,omitempty"`
 	ServerType      string     `json:"serverType,omitempty"`
 	UpdatedDateTime *time.Time `json:"updatedDateTime,omitempty"`
 }
 
-// MdmServerRelationships contains relationship resources for an MDM server.
-type MdmServerRelationships struct {
-	Devices *MdmServerRelationshipsDevices `json:"devices,omitempty"`
+// MDMServerRelationships contains relationship resources for an MDM server.
+type MDMServerRelationships struct {
+	Devices *MDMServerRelationshipsDevices `json:"devices,omitempty"`
 }
 
-// MdmServerRelationshipsDevices represents the devices relationship in an MDM server.
-type MdmServerRelationshipsDevices struct {
-	Data  []MdmServerRelationshipsDevicesData `json:"data,omitempty"`
+// MDMServerRelationshipsDevices represents the devices relationship in an MDM server.
+type MDMServerRelationshipsDevices struct {
+	Data  []MDMServerRelationshipsDevicesData `json:"data,omitempty"`
 	Links *RelationshipLinks                  `json:"links,omitempty"`
 	Meta  *PagingInformation                  `json:"meta,omitempty"`
 }
 
-// MdmServerRelationshipsDevicesData is an org-device linkage in an MDM-server relationship.
-type MdmServerRelationshipsDevicesData struct {
+// MDMServerRelationshipsDevicesData is an org-device linkage in an MDM-server relationship.
+type MDMServerRelationshipsDevicesData struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
 
-// MdmServerDevicesLinkagesResponse contains org-device linkages for a specific MDM server.
-type MdmServerDevicesLinkagesResponse struct {
-	Data  []MdmServerDevicesLinkageData `json:"data"`
+// MDMServerDevicesLinkagesResponse contains org-device linkages for a specific MDM server.
+type MDMServerDevicesLinkagesResponse struct {
+	Data  []MDMServerDevicesLinkageData `json:"data"`
 	Links PagedDocumentLinks            `json:"links"`
 	Meta  *PagingInformation            `json:"meta,omitempty"`
 }
 
-// MdmServerDevicesLinkageData contains an org-device linkage entry.
-type MdmServerDevicesLinkageData struct {
+// MDMServerDevicesLinkageData contains an org-device linkage entry.
+type MDMServerDevicesLinkageData struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
@@ -235,7 +237,7 @@ type OrgDeviceActivityCreateRequestDataAttributes struct {
 // OrgDeviceActivityCreateRequestDataRelationships are activity creation relationships.
 type OrgDeviceActivityCreateRequestDataRelationships struct {
 	Devices   OrgDeviceActivityCreateRequestDataRelationshipsDevices   `json:"devices"`
-	MdmServer OrgDeviceActivityCreateRequestDataRelationshipsMdmServer `json:"mdmServer"`
+	MDMServer OrgDeviceActivityCreateRequestDataRelationshipsMDMServer `json:"mdmServer"`
 }
 
 // OrgDeviceActivityCreateRequestDataRelationshipsDevices links devices in activity creation.
@@ -249,13 +251,13 @@ type OrgDeviceActivityCreateRequestDataRelationshipsDevicesData struct {
 	Type string `json:"type"`
 }
 
-// OrgDeviceActivityCreateRequestDataRelationshipsMdmServer links an MDM server in activity creation.
-type OrgDeviceActivityCreateRequestDataRelationshipsMdmServer struct {
-	Data OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData `json:"data"`
+// OrgDeviceActivityCreateRequestDataRelationshipsMDMServer links an MDM server in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsMDMServer struct {
+	Data OrgDeviceActivityCreateRequestDataRelationshipsMDMServerData `json:"data"`
 }
 
-// OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData is an MDM-server linkage used in activity creation.
-type OrgDeviceActivityCreateRequestDataRelationshipsMdmServerData struct {
+// OrgDeviceActivityCreateRequestDataRelationshipsMDMServerData is an MDM-server linkage used in activity creation.
+type OrgDeviceActivityCreateRequestDataRelationshipsMDMServerData struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
