@@ -66,7 +66,16 @@ func (c *Client) FetchOrgDevicePartNumbers(ctx context.Context, httpClient *http
 }
 
 func decodeOrgDevices(payload []byte) ([]string, string, error) {
-	var response OrgDevicesResponse
+	var response struct {
+		Data []struct {
+			Attributes struct {
+				PartNumber string `json:"partNumber"`
+			} `json:"attributes"`
+		} `json:"data"`
+		Links struct {
+			Next string `json:"next"`
+		} `json:"links"`
+	}
 	if err := json.Unmarshal(payload, &response); err != nil {
 		return nil, "", fmt.Errorf("decode org devices response: %w", err)
 	}
