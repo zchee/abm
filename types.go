@@ -17,7 +17,10 @@
 package abm
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 // OrgDevicesResponse contains a list of organization device resources.
@@ -71,6 +74,55 @@ const (
 	StatusUnAssigned OrgDeviceAttributesStatus = "UNASSIGNED"
 )
 
+// StringOrStrings is a flexible type that can unmarshal from either a JSON string
+// or an array of strings. The Apple Business Manager API inconsistently returns
+// fields like wifiMacAddress as either a string or an array depending on the device.
+type StringOrStrings []string
+
+// UnmarshalJSONFrom implements [json.UnmarshalerFrom] for the go-json-experiment library.
+func (s *StringOrStrings) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
+	kind := dec.PeekKind()
+	switch kind {
+	case '[':
+		var arr []string
+		if _, err := dec.ReadToken(); err != nil {
+			return err
+		}
+		for dec.PeekKind() != ']' {
+			tok, err := dec.ReadToken()
+			if err != nil {
+				return err
+			}
+			arr = append(arr, tok.String())
+		}
+		if _, err := dec.ReadToken(); err != nil {
+			return err
+		}
+		*s = arr
+		return nil
+	case '"':
+		tok, err := dec.ReadToken()
+		if err != nil {
+			return err
+		}
+		str := tok.String()
+		if str != "" {
+			*s = []string{str}
+		} else {
+			*s = nil
+		}
+		return nil
+	case 'n':
+		if _, err := dec.ReadToken(); err != nil {
+			return err
+		}
+		*s = nil
+		return nil
+	default:
+		return fmt.Errorf("StringOrStrings: unexpected JSON kind %v", kind)
+	}
+}
+
 // OrgDeviceAttributes contains attributes for an organization device resource.
 type OrgDeviceAttributes struct {
 	AddedToOrgDateTime      time.Time                             `json:"addedToOrgDateTime,omitzero"`
@@ -79,11 +131,11 @@ type OrgDeviceAttributes struct {
 	DeviceCapacity          string                                `json:"deviceCapacity,omitzero"`
 	DeviceModel             string                                `json:"deviceModel,omitzero"`
 	EID                     string                                `json:"eid,omitzero"`
-	IMEI                    []string                              `json:"imei,omitempty"`
-	MEID                    []string                              `json:"meid,omitempty"`
-	WifiMacAddress          []string                              `json:"wifiMacAddress,omitempty"`
-	BluetoothMacAddress     []string                              `json:"bluetoothMacAddress,omitempty"`
-	EthernetMacAddress      []string                              `json:"ethernetMacAddress,omitempty"`
+	IMEI                    StringOrStrings                       `json:"imei,omitempty"`
+	MEID                    StringOrStrings                       `json:"meid,omitempty"`
+	WifiMacAddress          StringOrStrings                       `json:"wifiMacAddress,omitempty"`
+	BluetoothMacAddress     StringOrStrings                       `json:"bluetoothMacAddress,omitempty"`
+	EthernetMacAddress      StringOrStrings                       `json:"ethernetMacAddress,omitempty"`
 	OrderDateTime           time.Time                             `json:"orderDateTime,omitzero"`
 	OrderNumber             string                                `json:"orderNumber,omitzero"`
 	PartNumber              string                                `json:"partNumber,omitzero"`
