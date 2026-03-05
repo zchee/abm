@@ -26,9 +26,18 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-json-experiment/json"
 	"golang.org/x/oauth2"
+)
+
+const (
+	// defaultMaxRetries is the default maximum number of retries for rate-limited requests.
+	defaultMaxRetries = 5
+
+	// defaultInitialBackoff is the initial backoff duration for retries.
+	defaultInitialBackoff = time.Second
 )
 
 const (
@@ -480,42 +489,63 @@ func (c *Client) doJSONRequest(ctx context.Context, method, path string, query u
 		}
 	}
 
-	requestReader := io.Reader(http.NoBody)
-	if len(body) > 0 {
-		requestReader = bytes.NewReader(body)
-	}
+	backoff := defaultInitialBackoff
 
-	req, err := http.NewRequestWithContext(ctx, method, requestURL, requestReader)
-	if err != nil {
-		return fmt.Errorf("build request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	if len(body) > 0 {
-		req.Header.Set("Content-Type", "application/json")
-	}
+	for attempt := 0; ; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("send request: %w", err)
-	}
-	defer resp.Body.Close()
+		requestReader := io.Reader(http.NoBody)
+		if len(body) > 0 {
+			requestReader = bytes.NewReader(body)
+		}
 
-	payload, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response body: %w", err)
-	}
+		req, err := http.NewRequestWithContext(ctx, method, requestURL, requestReader)
+		if err != nil {
+			return fmt.Errorf("build request: %w", err)
+		}
+		req.Header.Set("Accept", "application/json")
+		if len(body) > 0 {
+			req.Header.Set("Content-Type", "application/json")
+		}
 
-	if !statusAllowed(resp.StatusCode, expectedStatusCodes) {
-		return decodeAPIError(resp, payload)
-	}
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("send request: %w", err)
+		}
 
-	if responseBody == nil || len(payload) == 0 {
+		payload, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return fmt.Errorf("read response body: %w", err)
+		}
+
+		// Retry on 429 Too Many Requests with exponential backoff.
+		// Apple's ABM API has unpublished rate limits and returns 429
+		// when they are exceeded.
+		if resp.StatusCode == http.StatusTooManyRequests && attempt < defaultMaxRetries {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoff):
+			}
+			backoff *= 2
+			continue
+		}
+
+		if !statusAllowed(resp.StatusCode, expectedStatusCodes) {
+			return decodeAPIError(resp, payload)
+		}
+
+		if responseBody == nil || len(payload) == 0 {
+			return nil
+		}
+
+		if err := json.Unmarshal(payload, responseBody); err != nil {
+			return fmt.Errorf("decode response body: %w", err)
+		}
+
 		return nil
 	}
-
-	if err := json.Unmarshal(payload, responseBody); err != nil {
-		return fmt.Errorf("decode response body: %w", err)
-	}
-
-	return nil
 }

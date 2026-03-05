@@ -47,6 +47,58 @@ func (c *Client) FetchOrgDevicePartNumbers(ctx context.Context) ([]string, error
 	return partNumbers, nil
 }
 
+// FetchAllOrgDevices returns all org devices for the organization,
+// automatically following pagination until all pages are consumed.
+// It also returns the total device count from the first page's metadata.
+func (c *Client) FetchAllOrgDevices(ctx context.Context) ([]OrgDevice, int, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	baseURL, err := c.buildURL(orgDevicesPath, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var all []OrgDevice
+	var total int
+	firstPage := true
+
+	for pageResult, err := range PageIterator(ctx, c.httpClient, decodeOrgDevicesPage, baseURL) {
+		if err != nil {
+			return all, total, err
+		}
+		if firstPage {
+			total = pageResult.total
+			firstPage = false
+		}
+		all = append(all, pageResult.devices...)
+	}
+
+	return all, total, nil
+}
+
+type orgDevicesPageResult struct {
+	devices []OrgDevice
+	total   int
+}
+
+func decodeOrgDevicesPage(payload []byte) (orgDevicesPageResult, string, error) {
+	var response OrgDevicesResponse
+	if err := json.Unmarshal(payload, &response); err != nil {
+		return orgDevicesPageResult{}, "", fmt.Errorf("decode org devices response: %w", err)
+	}
+
+	result := orgDevicesPageResult{
+		devices: response.Data,
+	}
+	if response.Meta != nil {
+		result.total = response.Meta.Paging.Total
+	}
+
+	return result, response.Links.Next, nil
+}
+
 func decodeOrgDevices(payload []byte) ([]string, string, error) {
 	var response OrgDevicesResponse
 	if err := json.Unmarshal(payload, &response); err != nil {
