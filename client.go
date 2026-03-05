@@ -521,14 +521,20 @@ func (c *Client) doJSONRequest(ctx context.Context, method, path string, query u
 			return fmt.Errorf("read response body: %w", err)
 		}
 
-		// Retry on 429 Too Many Requests with exponential backoff.
+		// Retry on 429 Too Many Requests.
 		// Apple's ABM API has unpublished rate limits and returns 429
-		// when they are exceeded.
+		// when they are exceeded, with a Retry-After header in seconds.
 		if resp.StatusCode == http.StatusTooManyRequests && attempt < defaultMaxRetries {
+			wait := backoff
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, err := strconv.Atoi(ra); err == nil {
+					wait = time.Duration(secs) * time.Second
+				}
+			}
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case <-time.After(backoff):
+			case <-time.After(wait):
 			}
 			backoff *= 2
 			continue
