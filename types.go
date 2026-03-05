@@ -110,7 +110,7 @@ type OrgDeviceAttributes struct {
 	MEID                    []string                              `json:"meid,omitempty"`
 	WifiMacAddress          FlexStringSlice                       `json:"wifiMacAddress,omitempty"`
 	BluetoothMacAddress     FlexStringSlice                       `json:"bluetoothMacAddress,omitempty"`
-	EthernetMacAddress      FlexStringSlice                       `json:"ethernetMacAddress,omitempty"`
+	EthernetMacAddress      []string                              `json:"ethernetMacAddress,omitempty"`
 	OrderDateTime           time.Time                             `json:"orderDateTime,omitzero"`
 	OrderNumber             string                                `json:"orderNumber,omitzero"`
 	PartNumber              string                                `json:"partNumber,omitzero"`
