@@ -30,6 +30,7 @@ import (
 
 	"github.com/go-json-experiment/json"
 	"golang.org/x/oauth2"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -38,7 +39,29 @@ const (
 
 	// defaultInitialBackoff is the initial backoff duration for retries.
 	defaultInitialBackoff = time.Second
+
+	// defaultRateLimit is the proactive rate limit in requests per second.
+	// Apple's ABM API has an observed limit of ~20 requests/minute.
+	// 1 request every 3 seconds = 20/min, staying just at the limit.
+	defaultRateLimit = rate.Limit(1.0 / 3.0)
+
+	// defaultRateBurst is the maximum burst size for the rate limiter.
+	defaultRateBurst = 1
 )
+
+// rateLimitTransport wraps an http.RoundTripper with proactive rate limiting
+// to avoid hitting Apple's 429 rate limits.
+type rateLimitTransport struct {
+	base    http.RoundTripper
+	limiter *rate.Limiter
+}
+
+func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.limiter.Wait(req.Context()); err != nil {
+		return nil, err
+	}
+	return t.base.RoundTrip(req)
+}
 
 const (
 	// DefaultAPIBaseURL is the default Apple Business Manager API base URL.
@@ -148,7 +171,10 @@ func NewClientWithBaseURL(httpClient *http.Client, tokenSource oauth2.TokenSourc
 
 	authorizedClient := *httpClient
 	authorizedClient.Transport = &oauth2.Transport{
-		Base:   baseTransport,
+		Base: &rateLimitTransport{
+			base:    baseTransport,
+			limiter: rate.NewLimiter(defaultRateLimit, defaultRateBurst),
+		},
 		Source: tokenSource,
 	}
 
