@@ -17,8 +17,35 @@
 package abm
 
 import (
+	"encoding/json"
 	"time"
 )
+
+// FlexStringSlice handles JSON fields that may be a single string or an array of strings.
+// The ABM API is inconsistent about some fields (e.g. wifiMacAddress) — returning
+// a string for single values and an array for multiple values.
+type FlexStringSlice []string
+
+// UnmarshalJSON implements json.Unmarshaler, accepting both a string and an array of strings.
+func (f *FlexStringSlice) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		*f = nil
+		return nil
+	}
+	// Try array first
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err == nil {
+		*f = arr
+		return nil
+	}
+	// Try single string
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*f = []string{s}
+	return nil
+}
 
 // OrgDevicesResponse contains a list of organization device resources.
 type OrgDevicesResponse struct {
@@ -81,8 +108,8 @@ type OrgDeviceAttributes struct {
 	EID                     string                                `json:"eid,omitzero"`
 	IMEI                    []string                              `json:"imei,omitempty"`
 	MEID                    []string                              `json:"meid,omitempty"`
-	WifiMacAddress          []string                              `json:"wifiMacAddress,omitempty"`
-	BluetoothMacAddress     []string                              `json:"bluetoothMacAddress,omitempty"`
+	WifiMacAddress          FlexStringSlice                       `json:"wifiMacAddress,omitempty"`
+	BluetoothMacAddress     FlexStringSlice                       `json:"bluetoothMacAddress,omitempty"`
 	EthernetMacAddress      []string                              `json:"ethernetMacAddress,omitempty"`
 	OrderDateTime           time.Time                             `json:"orderDateTime,omitzero"`
 	OrderNumber             string                                `json:"orderNumber,omitzero"`

@@ -26,10 +26,42 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-json-experiment/json"
 	"golang.org/x/oauth2"
+	"golang.org/x/time/rate"
 )
+
+const (
+	// defaultMaxRetries is the default maximum number of retries for rate-limited requests.
+	defaultMaxRetries = 5
+
+	// defaultInitialBackoff is the initial backoff duration for retries.
+	defaultInitialBackoff = time.Second
+
+	// defaultRateLimit is the proactive rate limit in requests per second.
+	// Apple's ABM API has an observed limit of ~20 requests/minute.
+	// 1 request every 3 seconds = 20/min, staying just at the limit.
+	defaultRateLimit = rate.Limit(1.0 / 3.0)
+
+	// defaultRateBurst is the maximum burst size for the rate limiter.
+	defaultRateBurst = 1
+)
+
+// rateLimitTransport wraps an http.RoundTripper with proactive rate limiting
+// to avoid hitting Apple's 429 rate limits.
+type rateLimitTransport struct {
+	base    http.RoundTripper
+	limiter *rate.Limiter
+}
+
+func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.limiter.Wait(req.Context()); err != nil {
+		return nil, err
+	}
+	return t.base.RoundTrip(req)
+}
 
 const (
 	// DefaultAPIBaseURL is the default Apple Business Manager API base URL.
@@ -139,7 +171,10 @@ func NewClientWithBaseURL(httpClient *http.Client, tokenSource oauth2.TokenSourc
 
 	authorizedClient := *httpClient
 	authorizedClient.Transport = &oauth2.Transport{
-		Base:   baseTransport,
+		Base: &rateLimitTransport{
+			base:    baseTransport,
+			limiter: rate.NewLimiter(defaultRateLimit, defaultRateBurst),
+		},
 		Source: tokenSource,
 	}
 
@@ -480,42 +515,69 @@ func (c *Client) doJSONRequest(ctx context.Context, method, path string, query u
 		}
 	}
 
-	requestReader := io.Reader(http.NoBody)
-	if len(body) > 0 {
-		requestReader = bytes.NewReader(body)
-	}
+	backoff := defaultInitialBackoff
 
-	req, err := http.NewRequestWithContext(ctx, method, requestURL, requestReader)
-	if err != nil {
-		return fmt.Errorf("build request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	if len(body) > 0 {
-		req.Header.Set("Content-Type", "application/json")
-	}
+	for attempt := 0; ; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("send request: %w", err)
-	}
-	defer resp.Body.Close()
+		requestReader := io.Reader(http.NoBody)
+		if len(body) > 0 {
+			requestReader = bytes.NewReader(body)
+		}
 
-	payload, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response body: %w", err)
-	}
+		req, err := http.NewRequestWithContext(ctx, method, requestURL, requestReader)
+		if err != nil {
+			return fmt.Errorf("build request: %w", err)
+		}
+		req.Header.Set("Accept", "application/json")
+		if len(body) > 0 {
+			req.Header.Set("Content-Type", "application/json")
+		}
 
-	if !statusAllowed(resp.StatusCode, expectedStatusCodes) {
-		return decodeAPIError(resp, payload)
-	}
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("send request: %w", err)
+		}
 
-	if responseBody == nil || len(payload) == 0 {
+		payload, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return fmt.Errorf("read response body: %w", err)
+		}
+
+		// Retry on 429 Too Many Requests.
+		// Apple's ABM API has unpublished rate limits and returns 429
+		// when they are exceeded, with a Retry-After header in seconds.
+		if resp.StatusCode == http.StatusTooManyRequests && attempt < defaultMaxRetries {
+			wait := backoff
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, err := strconv.Atoi(ra); err == nil {
+					wait = time.Duration(secs) * time.Second
+				}
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(wait):
+			}
+			backoff *= 2
+			continue
+		}
+
+		if !statusAllowed(resp.StatusCode, expectedStatusCodes) {
+			return decodeAPIError(resp, payload)
+		}
+
+		if responseBody == nil || len(payload) == 0 {
+			return nil
+		}
+
+		if err := json.Unmarshal(payload, responseBody); err != nil {
+			return fmt.Errorf("decode response body: %w", err)
+		}
+
 		return nil
 	}
-
-	if err := json.Unmarshal(payload, responseBody); err != nil {
-		return fmt.Errorf("decode response body: %w", err)
-	}
-
-	return nil
 }

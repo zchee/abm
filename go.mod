@@ -9,3 +9,5 @@ require (
 	github.com/google/uuid v1.6.0
 	golang.org/x/oauth2 v0.35.0
 )
+
+require golang.org/x/time v0.14.0 // indirect
